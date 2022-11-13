@@ -1,0 +1,9 @@
+# Use with: vmd -dispdev text -e psfhap_buck.pgn
+package require psfgen
+topology top_HAP_buck.inp
+segment O {pdb HAP_19301.pdb}
+coordpdb HAP_19301.pdb O
+guesscoord
+writepdb HAP_19301.pdb
+writepsf HAP_19301.psf
+quit

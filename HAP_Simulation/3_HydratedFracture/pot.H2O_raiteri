@@ -1,0 +1,36 @@
+# 1 Ca, 2 C, 3 O, 4 H, 5 Ow, 6 H, 7 O
+
+pair_style lj/charmm/coul/long 8 12 # buck/coul/long 8 12 # lj/cut/coul/long 10.0 #cut 10.0 #buck/coul/cut 9
+#pair_coeff * * buck/coul/long	0		1		0		#default just coul
+#pair_coeff 1 3 buck/coul/cut	3161.6335	0.271511	0 		#Ca-O
+#pair_coeff 1 2 buck/coul/cut	120000000	0.12		0		#Ca-C
+#pair_coeff 3 3 buck/coul/cut	63840.199	0.198913	27.899008	#O-O
+#pair_coeff 3 5 buck/coul/cut	12534.455133	0.215172	12.090225	#O-Ow
+#pair_coeff 3 4 buck/coul/cut	396.320957	0.230006	0		#O-H
+#pair_coeff 1 5 buck/coul/cut	1186.492877	0.297		0		#Ca-H
+#pair_coeff * * 100 2
+pair_coeff 6 6 0 0 #100 2 #lj/charmm/coul/long 100 2 #	0.00000 0.000
+pair_coeff 6 7 0 0 #100 2 #lj/charmm/coul/long 100 2 #	0.00000 0.000
+pair_coeff 7 7 0.15535 3.166 #100 2 #lj/charmm/coul/long 100 2 #	0.15535 3.166
+
+bond_style	harmonic
+#bond_coeff	1 20.424650 1.3042000	#C-O
+bond_coeff	* 450 	    0.9572 #tip3p #22.965000 1.0120000	#Ow-H
+bond_coeff      1 545       0.96  # HR   OR  
+bond_coeff      2 610       1.27  # OP   P   
+
+angle_style 	hybrid charmm harmonic
+#angle_coeff	1 class2    120.00000 6.6170000 0.0000000 0.0000000 
+#angle_coeff	1 class2 bb 12.818000 1.3042000 1.3042000
+#angle_coeff	1 class2 ba 1.5331900 1.5331900 1.3042000 1.3042000
+angle_coeff	* harmonic  55 	      104.52 #tip3p #1.6456800 113.24000 #water
+angle_coeff	1 charmm    82        129.75               77             3.54  # OP   P    OP  
+#improper_style 	distance
+#improper_coeff 	1 13.647000 360.00000
+
+neighbor        2.0 bin
+neigh_modify    every 1 delay 1 check yes one 4000
+
+#Raiteri P, et al. Derivation of an accurate force-field for simulating the growth of calcium carbonate from aqueous solution: A new model for the calcite− Water interface. The Journal of Physical Chemistry C 2010, 114.13: 5997-6010 (Pair_styles)
+
+#Raiteri P, Demichelis R, Gale JD. Thermodynamically consistent force field for molecular dynamics simulations of alkaline-earth carbonates and their aqueous speciation. The Journal of Physical Chemistry C 2015, 119(43): 24447-24458 (Else)

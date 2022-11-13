@@ -1,0 +1,257 @@
+# Created by charmm2lammps v1.9.2 on Wed Jul  1 20:30:05 EDT 2020
+# Command: charmm2lammps.pl hap HAP_19301 -charmm
+
+units           real
+dimension	3
+processors	*	*	*
+boundary	p	p	p
+neigh_modify    delay 2 every 1
+
+atom_style      full
+bond_style      harmonic
+angle_style     charmm
+pair_style      lj/charmm/coul/long 8 12
+pair_modify     mix arithmetic
+kspace_style    pppm 1e-6
+
+read_data       dat.HAP_1930 extra/atom/types 2 extra/bond/types 1 extra/angle/types 1 extra/bond/per/atom 1 #Change as needed
+read_data 	dat.water_eq add append offset 5 2 1 0 0 shift -4.6 158 2.397
+
+special_bonds   charmm
+timestep        1.0
+
+group		OP type 1 
+group		P type 2 
+group		CAL type 3 
+group		OR type 4 
+group		HR type 5
+group		H type 6
+group		Ow type 7
+
+group 		Crystal union OP P CAL OR HR
+group		Water union H Ow
+
+# potential
+include		pot.H2O_raiteri
+
+velocity all set 0 0 0
+fix freezewater Water setforce 0 0 0
+minimize 0.0 0.0 500 2000
+unfix freezewater
+
+#------------------------------------
+# Initial cell length for strain calculations
+variable tmpz equal "lz"
+variable Lz0 equal ${tmpz}
+print "Initial Length, Lz0: ${Lz0}"
+
+variable hin equal bound(all,ymax)
+variable fro equal bound(all,ymin)
+variable tLy0 equal "v_hin-v_fro"
+variable Ly0 equal ${tLy0}
+
+variable wallh equal "v_hin-4"
+variable wallf equal "v_fro+4"
+region hind block INF INF ${wallh} INF INF INF
+region fron block INF INF INF ${wallf} INF INF
+group hind region hind
+group fron region fron
+group surface union hind fron
+group surf_riga subtract surface OP
+group surf_rigb subtract surf_riga OR
+group surf_rig subtract surf_rigb HR
+
+compute 	peatom all pe/atom
+compute 	keatom all ke/atom
+compute		statom all stress/atom NULL
+dump            1 all custom 500 dump.HAP1930 id type x y z c_peatom c_keatom c_statom[1] c_statom[2] c_statom[3] c_statom[4] c_statom[5] c_statom[6]
+
+# 1 bar = 1/10000 GPa
+variable strain equal "(lz - v_Lz0)/v_Lz0"
+variable sx equal "-pxx/10000"
+variable sy equal "-pyy/10000"
+variable sz equal "-pzz/10000"
+
+thermo          500
+thermo_style    custom step v_strain v_sx v_sy v_sz lx ly lz pe ke etotal press temp
+
+#-----------------Equilibration--------------
+reset_timestep	0
+#velocity        Crystal create 300.0 1234568 dist uniform
+velocity	surface set 0 0 0 
+
+group Notch id 10297 10306 10304 12675 12678 12677 11090 10347 10303 11178 11134 12718 12762 11931 11887 12674 11093 11094 11182 11091 11181 11179 11138 11137 11135 11934 11932 11925 11978 11888 11969 11890 11976 11881 11092 11097 11180 11268 11185 11136 11141 11224 11229 12021 11933 12016 11928 11977 12060 11972 11889 11884 11089 11184 11272 11177 11265 11098 11096 11274 11186 11133 11140 11228 11309 11221 11142 11230 12015 11927 11929 12018 11930 12105 12017 11971 12059 11973 12061 11883 12062 11974 11886 11885 11271 11882 11183 11095 11139 11227 11315 11970 12058 12146 11926 12102 12014 10331 10332 10333 10335 10311 10314 10315 10334 11108 11109 11110 11111 11112 11116 11117 11118 11119 11120 11121 11122 11123 11124 11125 11126 11127 11128 11129 11130 11131 11132 10312 10313 11103 11104 11105 11106 11107 11113 11114 11115 11152 11153 11154 11155 11156 11162 11163 11164 11165 11166 11167 11168 11169 11170 11171 11172 11173 11174 11175 11176 11147 11148 11149 11150 11151 11157 11158 11159 11160 11161 11196 11198 11199 11200 11206 11207 11208 11209 11210 11211 11213 11214 11215 11216 11217 11218 11219 11220 11197 11191 11192 11193 11194 11195 11201 11202 11203 11204 11205 11212 11250 11251 11252 11253 11254 11255 11257 11258 11259 11260 11261 11262 11263 11264 11900 11901 11902 11903 11904 11908 11909 11910 11911 11912 11913 11914 11915 11916 11917 11918 11919 11920 11921 11922 11923 11924 12695 12700 12706 12692 12693 12702 12703 12696 11895 11896 11897 11898 11899 11905 11906 11907 11944 11945 11946 11947 11948 11954 11955 11956 11957 11958 11959 11960 11961 11962 11963 11964 11965 11966 11967 11968 12750 12697 12698 12746 12747 12748 12699 11939 11940 11941 11942 11943 11949 11950 11951 11952 11953 11988 11990 11991 11992 11998 11999 12000 12001 12002 12003 12005 12006 12007 12008 12009 12010 12011 12012 11989 11983 11984 11985 11986 11987 11993 11994 11995 11996 11997 12004 12032 12036 12042 12043 12044 12045 12046 12052 12053 12054 12055 12056 12694 12701 12704 12705 12749 11235 11236 11237 11238 11239 11256 11301 11302 11303 11304 11305 11306 11307 11308 11279 11280 11281 11282 11283 11299 11300 11348 11349 11350 11351 11352 12033 12034 12035 12037 12038 12039 12040 12041 12080 12086 12087 12088 12089 12090 12076 12077 12078 12079 12081 12082 12083 12084 12085 12130 12131 12132 12133 12134 10307 10308 11099 11100 11101 11102 11143 11144 11145 11146 11187 11188 11189 11190 11231 11232 11891 11892 11893 11894 11935 11936 11937 11938 12729 12730 11979 11980 11981 11982 12023 12024 12025 12026 11275 11276 12069 12070 12113 12114
+delete_atoms group Notch bond yes mol yes
+
+write_data      dat.HAPWater_Initial
+
+fix             1 Water npt temp 10 300 10 iso 1 1 1000
+run             10000
+unfix           1
+
+fix		1 Water npt temp 300 300 10 iso 1 1 1000
+fix		2 Crystal npt temp 10 300 10 iso 1 1 1000
+run 10000
+unfix 1
+unfix 2
+
+write_restart	restart.HAP2239eq0
+write_data	dat.HAP2239eq0 
+
+
+##------------------------Deformation---------------
+reset_timestep 	0
+velocity 	surf_rig set 0 0 0
+fix		1 surf_rig setforce NULL 0 NULL
+
+#Break 1
+fix 		2 all nvt temp 300 300 10
+fix 		3 all deform 1 z erate 0.000005 units box remap x #1 m/s 
+#restart 	8000 restart.HAPtenz 
+run             40000 #
+write_data	dat.HAPtenz40000 #
+unfix 		3
+
+variable srate equal "-0.2/1.2/40000"
+fix 		3 all deform 1 z erate ${srate} units box remap x #1 m/s 
+#restart 	8000 restart.HAPcomp 
+run             40000 #
+#write_data	dat.HAPcomp40000 #
+unfix 		3
+unfix 		2
+
+#Sinter 1
+fix 		2 all npt temp 300 300 10 z 1 6513.69 1000
+run 10000
+unfix 2 
+#write_restart	restart.HAP1930sint11
+
+fix 		2 all npt temp 300 300 10 z 6513.69 6513.69 1000
+run 10000
+unfix 2
+#write_restart	restart.HAP1930sint12
+
+fix 		2 all npt temp 300 300 10 z 6513.69 1 1000
+run 10000
+unfix 2
+#write_restart	restart.HAP1930sint13
+
+fix 		2 all npt temp 300 300 10 z 1 1 1000
+run 10000
+unfix 2
+write_restart	restart.HAP1930eq1
+write_data	dat.HAP1930eq1
+#
+#Break 2
+fix             2 all nvt temp 300 300 10
+fix 		3 all deform 1 z erate 0.000005 units box remap x #1 m/s 
+#restart 	8000 restart.HAPtenz2 
+run             40000 #
+write_data	dat.HAPtenz40000_2 #
+unfix 		3
+
+variable srate equal "-0.2/1.2/40000"
+fix 		3 all deform 1 z erate ${srate} units box remap x #1 m/s 
+#restart 	8000 restart.HAPcomp2 
+run             40000 #
+#write_data	dat.HAPcomp40000_2 #
+unfix 		3
+unfix 		2
+
+#Sinter 2
+fix 		2 all npt temp 300 300 10 z 1 6513.69 1000
+run 10000
+unfix 2 
+#write_restart	restart.HAP1930sint21
+
+fix 		2 all npt temp 300 300 10 z 6513.69 6513.69 1000
+run 10000
+unfix 2
+#write_restart	restart.HAP1930sint22
+
+fix 		2 all npt temp 300 300 10 z 6513.69 1 1000
+run 10000
+unfix 2
+#write_restart	restart.HAP1930sint23
+
+fix 		2 all npt temp 300 300 10 z 1 1 1000
+run 10000
+unfix 2
+write_restart	restart.HAP1930eq2
+write_data	dat.HAP1930eq2
+
+#Break 3
+fix             2 all nvt temp 300 300 10
+fix             3 all deform 1 z erate 0.000005 units box remap x #1 m/s 
+#restart         8000 restart.HAPtenz3
+run             40000 #
+write_data      dat.HAPtenz40000_3 #
+unfix           3
+
+variable srate equal "-0.2/1.2/40000"
+fix             3 all deform 1 z erate ${srate} units box remap x #1 m/s 
+#restart         8000 restart.HAPcomp3
+run             40000 #
+#write_data      dat.HAPcomp40000_3 #
+unfix           3
+unfix           2
+
+#Sinter 3
+fix             2 all npt temp 300 300 10 z 1 6513.69 1000
+run 10000
+unfix 2
+#write_restart   restart.HAP1930sint31
+
+fix             2 all npt temp 300 300 10 z 6513.69 6513.69 1000
+run 10000
+unfix 2
+#write_restart   restart.HAP1930sint32
+
+fix             2 all npt temp 300 300 10 z 6513.69 1 1000
+run 10000
+unfix 2
+#write_restart   restart.HAP1930sint33
+
+fix             2 all npt temp 300 300 10 z 1 1 1000
+run 10000
+unfix 2
+write_restart   restart.HAP1930eq3
+write_data      dat.HAP1930eq3
+
+#Break 4
+fix             2 all nvt temp 300 300 10
+fix             3 all deform 1 z erate 0.000005 units box remap x #1 m/s 
+#restart         8000 restart.HAPtenz4
+run             40000 #
+write_data      dat.HAPtenz40000_4 #
+#unfix           3
+
+variable srate equal "-0.2/1.2/40000"
+fix             3 all deform 1 z erate ${srate} units box remap x #1 m/s 
+#restart         8000 restart.HAPcomp4
+run             40000 #
+#write_data      dat.HAPcomp40000_4 #
+unfix           3
+unfix           2
+
+#Sinter 2
+fix             2 all npt temp 300 300 10 z 1 6513.69 1000
+run 10000
+unfix 2
+#write_restart   restart.HAP1930sint41
+
+fix             2 all npt temp 300 300 10 z 6513.69 6513.69 1000
+run 10000
+unfix 2
+#write_restart   restart.HAP1930sint42
+
+fix             2 all npt temp 300 300 10 z 6513.69 1 1000
+run 10000
+unfix 2
+#write_restart   restart.HAP1930sint43
+
+fix             2 all npt temp 300 300 10 z 1 1 1000
+run 10000
+unfix 2
+write_restart   restart.HAP1930eq4
+write_data      dat.HAP1930eq4

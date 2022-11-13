@@ -1,0 +1,144 @@
+# ------------------------ Initialization ----------------------
+clear
+units 		metal
+dimension	3
+processors	*	*	*
+boundary	p	p	p
+
+atom_style	full
+
+# input coordinate data and potential
+read_data 	dat.water
+include		pot.CaCO3_raiteri
+
+#replicate	3 3 3 
+
+group		Ow type 1
+group		H type 2
+
+timestep	0.001
+#minimize 	0.0 0.0 50000 200000
+
+#------------------------------------------
+# Initial cell length for strain calculations
+variable tmpz equal "lz"
+variable Lz0 equal ${tmpz}
+print "Initial Length, Lz0: ${Lz0}"
+
+variable hin equal bound(all,ymax)
+variable fro equal bound(all,ymin)
+variable tLy0 equal "v_hin-v_fro"
+variable Ly0 equal ${tLy0}
+
+variable wallh equal "v_hin-12"
+variable wallf equal "v_fro+12"
+region hind block INF INF ${wallh} INF INF INF
+region fron block INF INF INF ${wallf} INF INF
+group hind region hind
+group fron region fron
+group surface union hind fron
+#group surf_rig subtract surface O
+
+compute 	peatom all pe/atom
+compute 	keatom all ke/atom
+compute		statom all stress/atom NULL
+dump            1 all custom 500 dump.water id type x y z c_peatom c_keatom c_statom[1] c_statom[2] c_statom[3] c_statom[4] c_statom[5] c_statom[6]
+
+# 1 bar = 1/10000 GPa
+variable strain equal "(lz - v_Lz0)/v_Lz0"
+variable sx equal "-pxx/10000"
+variable sy equal "-pyy/10000"
+variable sz equal "-pzz/10000"
+
+thermo          50
+thermo_style    custom step v_strain v_sx v_sy v_sz lx ly lz pe ke etotal press temp
+
+# ------------------------- Equilibration-------------------------
+reset_timestep	0
+velocity        all create 300.0 1234568 dist uniform
+
+#fix constrain all shake 1.0e-4 100 0 b 1 a 1
+fix integrate all npt temp 300 300 0.2 iso 1 1 2
+fix removeMomentum all momentum 1 linear 1 1 1
+run 5000
+
+#unfix integrate
+#fix integrate all npt temp 10 25 0.2 x 1 1 2 y 5 5 2 z 1 1 2
+#run 10000
+
+#unfix integrate
+#fix integrate all npt temp 25 25 0.2 iso 1 1 2
+#run 10000
+
+#unfix integrate
+#fix integrate all npt temp 25 100 0.2 iso 1 1 2
+#run 10000
+
+#unfix integrate
+#fix integrate all npt temp 100 125 0.2 x 1 1 2 y 5 5 2 z 1 1 2
+#run 10000
+
+#unfix integrate
+#fix integrate all npt temp 125 125 0.2 iso 1 1 2
+#run 20000
+
+#unfix integrate
+#fix integrate all npt temp 125 130 0.2 iso 1 1 2 #x 5 5 2 y 1 1 2 z 1 1 2
+#run 20000
+
+#unfix integrate
+#fix integrate all npt temp 130 150 0.2 iso 1 1 2
+#run 10000
+
+#unfix integrate
+#fix integrate all npt temp 150 200 0.2 iso 1 1 2
+#run 10000
+
+#unfix integrate
+#fix integrate all npt temp 200 200 0.2 iso 1 1 2
+#run 10000
+
+#unfix integrate
+#fix integrate all npt temp 200 250 0.2 iso 1 1 2
+#run 10000
+
+#unfix integrate
+#fix integrate all npt temp 250 250 0.2 iso 1 1 2
+#run 10000
+
+#unfix integrate
+#fix integrate all npt temp 250 300 0.02 iso 1 1 2
+#run 10000
+
+##fix             1 H nvt temp 10 10 2 #iso 1 1 2
+#run             30
+#unfix 		1
+
+#fix             1 Ow nvt temp 10 300 2 #iso 1 1 2
+#run             300
+#unfix           1
+
+#fix             1 H nvt temp 10 300 2 #iso 1 1 2
+#fix		2 Ow nvt temp 300 300 2
+#run             300
+#unfix           1
+
+#unfix 0
+
+#fix             1 all npt temp 300 300 0.2 x 1 1000 2 y 1 1 2 z 1 1 2
+#run             5000
+#unfix 		1
+
+#fix             1 all npt temp 300 300 0.2 x 1000 1 2 y 1 1 2 z 1 1 2
+#run             5000
+#unfix 		1
+
+#fix             1 all npt temp 300 300 0.2 x 1 1 2 y 1 1 2 z 1 1 2
+#run             5000
+#unfix 		1
+
+write_restart	restart.water
+write_data	dat.water_eq 
+
+
+

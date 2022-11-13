@@ -1,0 +1,39 @@
+# 1 Ca, 2 C, 3 O, 4 Ow, 5 H
+
+#pair_style buck/coul/long 9 #9 A cut off
+#pair_coeff * * 0		1		0		#default just coul
+#pair_coeff 1 3 3161.6335	0.271511	0 		#Ca-O
+#pair_coeff 1 2 120000000	0.12		0		#Ca-C
+#pair_coeff 3 3 63840.199	0.198913	27.899008	#O-O
+#pair_coeff 3 4 12534.455133	0.215172	12.090225	#O-Ow
+#pair_coeff 3 5 396.320957	0.230006	0		#O-H
+#pair_coeff 1 4 1186.492877	0.297		0		#Ca-H
+pair_style lj/cut/coul/cut 10.0
+pair_modify tail yes
+#kspace_style pppm 1.0e-5
+
+pair_coeff 1 1 0.00000 0.000
+pair_coeff 1 2 0.00000 0.000
+pair_coeff 2 2 0.15535 3.166
+
+#kspace_style	pppm 1.0e-5
+
+bond_style	harmonic
+#bond_coeff	1 20.424650 1.3042000	#C-O
+bond_coeff	1 22.965000 1.0120000	#Ow-H
+
+angle_style 	hybrid class2 harmonic
+#angle_coeff	1 class2    120.00000 6.6170000 0.0000000 0.0000000 
+#angle_coeff	1 class2 bb 12.818000 1.3042000 1.3042000
+#angle_coeff	1 class2 ba 1.5331900 1.5331900 1.3042000 1.3042000
+angle_coeff	1 harmonic  1.6456800 113.24000 #water
+
+#improper_style 	distance
+#improper_coeff 	1 13.647000 360.00000
+
+neighbor        2.0 bin
+neigh_modify    every 1 delay 1 check yes one 4000
+
+#Raiteri P, et al. Derivation of an accurate force-field for simulating the growth of calcium carbonate from aqueous solution: A new model for the calcite− Water interface. The Journal of Physical Chemistry C 2010, 114.13: 5997-6010 (Pair_styles)
+
+#Raiteri P, Demichelis R, Gale JD. Thermodynamically consistent force field for molecular dynamics simulations of alkaline-earth carbonates and their aqueous speciation. The Journal of Physical Chemistry C 2015, 119(43): 24447-24458 (Else)
